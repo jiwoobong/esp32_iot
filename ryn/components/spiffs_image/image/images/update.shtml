@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Update Address - RynBright(tm)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <script type="text/javascript" src="jquery-1.11.3.min.js"></script>
+  <script src="jquery.flot.min.js"></script>
+  <script src="jquery.flot.time.js"></script>
+  <!-- <script type="text/javascript" src="main.js"></script> -->
+  <script type="text/javascript" >
+
+      function submitting()
+      {
+          document.getElementById("btn_submit").value = "Updating .... ";
+      }
+
+      function dec()
+      {
+          var addr = document.getElementById("new_address").value;
+          if (addr <= 1)
+              return;
+
+          addr--;
+          document.getElementById("new_address").value = addr;
+          document.getElementById("view_address").textContent = addr;
+      }
+
+      function inc()
+      {
+          var addr = document.getElementById("new_address").value;
+          if (addr >= 170)
+              return;
+
+          addr++;
+          document.getElementById("new_address").value = addr;
+          document.getElementById("view_address").textContent = addr;
+      }
+
+
+      $(document).on('input change', '#new_address', function() {
+          $('#view_address').html( $(this).val() );
+      });
+
+  </script>
+
+</head>
+<body>
+  <div class="content">
+    <!img src="logo.png" style="float:right; height: 50px; border-radius: 3px;">
+    <h3>ADDRESS UPDATE</h3>
+
+    <p>
+      연결된 모든 리시버의 어드레스가 업데이트 됩니다.
+    </p>
+
+    NEW ADDRESS : <span id="view_address"><!--#call new_address --></span>
+    <form method="POST" action="/update_address">
+      <input type="hidden" value="all" name="ref" />
+      <input type="hidden" id="old_address" name="old_address" value="<!--#call old_address -->" />
+      <input type="range" id="new_address" name="new_address" min="1" max="170" value="<!--#call new_address -->"  /><br />
+
+      <div style="text-align:center;">
+      <input type="button" value="  <<  " onclick="dec()" class="button" />&nbsp;&nbsp;
+      <input type="button" value="  >>  " onclick="inc()" class="button" /><br/><br/>
+      <input type="submit" onclick="submitting()" id="btn_submit" value="ADDRESS UPDATE" class="submit_button" />
+      </div>
+    </form>
+  <!--
+    <h1>Dashboard section</h1>
+    <label>CPU usage:</label> <span id="cpu_usage">&nbsp;</span>
+    <div id="graphs"></div>
+  -->
+  <br />
+  </div>
+
+  <div class="nav">
+    ▶▶<a href="update.shtml" class="nav">UPDATE ADDRESS</a>  <br />
+    <a href="update_target.shtml"  class="nav">UPDATE TARGET ADDRESS </a> <br />
+    <a href="config.shtml"  class="nav">SET CONFIG </a>
+  </div>
+
+</body>
+</html>

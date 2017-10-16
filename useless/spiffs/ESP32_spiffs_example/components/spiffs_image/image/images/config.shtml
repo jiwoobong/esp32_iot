@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Update Address - RynBright(tm)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" type="text/css" href="style.css">
+
+  <script type="text/javascript" src="jquery-1.11.3.min.js"></script>
+  <script type="text/javascript" >
+      function update()
+      {
+        // beta
+        // B_COEFFICIENT : 25/80 , 3428K
+        // B_COEFFICIENT : 25/85 , 3434K
+        // B_COEFFICIENT : 25/100 , 3455K
+        var constK = 273.15;  // 0 Celsius
+        const SERIES_RESISTOR = 10000;
+
+        // resistance at 25 degrees C
+        const NTC_NOMINAL = 10000;
+
+        // temp. for nominal temperature
+        const TEMPERATURE_NOMINAL = 25;
+
+        const B_COEFFICIENT = 3455;
+
+        var resistance = 0.0;
+        var adc_val = 0;
+        var target_temp_limit = Number(document.getElementById("temperature").value);
+
+        //e^((1/(T+273.15) - 1/298.15)*B)*10000 = x
+        resistance = NTC_NOMINAL * Math.pow( Math.E, (1/(target_temp_limit + constK) - 1/(25 + Number(constK))) * B_COEFFICIENT );
+        adc_val = Math.round((1024 * resistance) / (resistance + Number(SERIES_RESISTOR)));
+
+        document.getElementById("adc").value = adc_val;
+
+        //alert("adc = " + document.getElementById("adc").value);
+
+        return true;
+      }
+
+    //  document.getElementById("test").textContent = "resistance = " + resistance + "adc_val = " + adc_val;
+
+      function dec(id)
+      {
+          var ctrl = document.getElementById(id);
+          var view = document.getElementById(id.concat("_view"));
+          var addr = Number(ctrl.value);
+
+          if(addr <= ctrl.min)
+              return;
+
+          var step = Number(ctrl.step);
+          addr -= step;
+          ctrl.value = addr;
+          view.textContent = addr;
+      }
+
+      function inc(id)
+      {
+          var ctrl = document.getElementById(id);
+          var view = document.getElementById(id.concat("_view"));
+          var addr = Number(ctrl.value);
+
+          if(addr >= ctrl.max)
+              return;
+
+          var step = Number(ctrl.step);
+          addr+=step;
+
+          ctrl.value = addr;
+          view.textContent = addr;
+      }
+
+
+      $(document).on('input change', '#temperature', function() {
+          $('#temperature_view').html( $(this).val() );
+      });
+
+      $(document).on('input change', '#brightness', function() {
+          $('#brightness_view').html( $(this).val() );
+      });
+
+
+  </script>
+
+
+</head>
+<body>
+  <div class="content">
+    <!img src="logo.png" style="float:right; height: 50px; border-radius: 3px;">
+    <h3>온도 리밋 설정</h3>
+      <table border="1" CELLPADDING="5" >
+      <tr><td>최고 온도</td> <td><span id="temperature_view"><!--#call temperature --></span> </td></tr>
+      <tr><td>최대 밝기</td> <td><span id="brightness_view"><!--#call brightness --></span>% </td></tr>
+      </table>
+
+    <form method="POST" action="/update_config" onsubmit="return update();">
+
+      <input type="hidden" value="temperature_set" name="ref" />
+      <input type="hidden" value="50" name="adc" id="adc" />
+
+      <input type="range" id="temperature" name="temperature" min="50" max="100" step="1" value="<!--#call temperature -->"  /><br />
+
+      <div style="text-align:center;">
+      <input type="button" value="  <<  " onclick="dec('temperature');" class="button" />&nbsp;&nbsp;
+      <input type="button" value="  >>  " onclick="inc('temperature');" class="button" /><br/><br/>
+      </div>
+
+      <input type="range" id="brightness" name="brightness" min="0" max="90" step="10" value="<!--#call brightness -->"  /><br />
+
+      <div style="text-align:center;">
+        <input type="button" value="  <<  " onclick="dec('brightness')" class="button" />&nbsp;&nbsp;
+        <input type="button" value="  >>  " onclick="inc('brightness')" class="button" /><br/><br/>
+        <input type="submit"  id="btn_submit" value="UPDATE!!" class="submit_button" />
+      </div>
+    </form>
+  <!--
+    <h1>Dashboard section</h1>
+    <label>CPU usage:</label> <span id="cpu_usage">&nbsp;</span>
+    <div id="graphs"></div>
+  -->
+  <br />
+  </div>
+
+  <div class="nav">
+    <a href="update.shtml" class="nav">UPDATE ADDRESS</a>  <br />
+    <a href="update_target.shtml"  class="nav">UPDATE TARGET ADDRESS </a> <br />
+    ▶▶<a href="config.shtml"  class="nav">SET CONFIG </a><br />
+    <a href="/testdmx" > test </a>
+  </div>
+
+</body>
+
+</html>
