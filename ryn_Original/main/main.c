@@ -1,13 +1,6 @@
 // how to set eclipse with gdb.
 // https://esp32.com/viewtopic.php?f=13&t=336&hilit=gdb&start=10
 
-// udp example
-// https://github.com/bytesploit/WaterBot
-
-#define SERVER 1
-#define CLIENT 0
-#define CODE_SIDE CLINET
-#define TAG "Wifi"
 #include "sdkconfig.h"
 
 #include "freertos/FreeRTOS.h"
@@ -55,9 +48,6 @@
 //#include "addrdone2.h"
 #include "welcome.h"
 
-#include "esp_log.h"
-#include "ssd1306.h"
-#include "fonts.h"
 
 
 #define  SPIFFS_PATH 		"/spiffs/images"
@@ -71,7 +61,6 @@ TaskHandle_t xHandleDmxFrame = NULL;
 
 uint8_t bStationConnected = 0;
 
-int bLCDUpdate = 0;
 
 typedef struct {
 	char old_address[8];
@@ -98,7 +87,6 @@ struct device_settings {
   char setting2[100];
 };
 
-char my_ip[20];
 
 struct device_settings s_settings = {"value1", "value2"};
 
@@ -107,75 +95,13 @@ static uint8_t bPlay = 0;
 
 void mongooseTask(void *data);
 
-void receive_thread(void *pvParameters)
-{
-
-    int socket_fd;
-    struct sockaddr_in sa,ra;
-
-    int recv_data; char data_buffer[80];
-    /* Creates an UDP socket (SOCK_DGRAM) with Internet Protocol Family (PF_INET).
-     * Protocol family and Address family related. For example PF_INET Protocol Family and AF_INET family are coupled.
-    */
-
-    socket_fd = socket(PF_INET, SOCK_DGRAM, 0);
-
-    if ( socket_fd < 0 )
-    {
-
-        printf("socket call failed");
-        exit(0);
-
-    }
-
-    memset(&sa, 0, sizeof(struct sockaddr_in));
-    ra.sin_family = AF_INET;
-    ra.sin_addr.s_addr = inet_addr(RECEIVER_IP_ADDR);
-    ra.sin_port = htons(RECEIVER_PORT_NUM);
-
-
-    /* Bind the UDP socket to the port RECEIVER_PORT_NUM and to the current
-    * machines IP address (Its defined by RECEIVER_PORT_NUM).
-    * Once bind is successful for UDP sockets application can operate
-    * on the socket descriptor for sending or receiving data.
-    */
-    if (bind(socket_fd, (struct sockaddr *)&ra, sizeof(struct sockaddr_in)) == -1)
-    {
-
-    printf("Bind to Port Number %d ,IP address %s failed\n",RECEIVER_PORT_NUM,RECEIVER_IP_ADDR);
-    close(socket_fd);
-    exit(1);
-    }
-    /* RECEIVER_PORT_NUM is port on which Server waits for data to
-    * come in. It copies the received data into receive buffer and
-    * prints the received data as string. If no data is available it
-    * blocks.recv calls typically return any availbale data on the socket instead of waiting for the entire data to come.
-    */
-
-    while(1)
-    {
-		recv_data = recv(socket_fd,data_buffer,sizeof(data_buffer),0);
-		if(recv_data > 0)
-		{
-
-			data_buffer[recv_data] = '\0';
-			printf("%s\n",data_buffer);
-
-		}
-    }
-    close(socket_fd);
-
-}
-
 
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
-#if (CODE_SIDE==SERVER)
-
 	switch (event->event_id) {
 	case SYSTEM_EVENT_AP_START:
 		printf("Accesspoint connected\n");
-		//xTaskCreatePinnedToCore(&mongooseTask, "mongooseTask", 80000, NULL, 5, &xHandleMongoose, 0);
+		xTaskCreatePinnedToCore(&mongooseTask, "mongooseTask", 80000, NULL, 5, &xHandleMongoose, 0);
 		break;
 
 	case SYSTEM_EVENT_AP_STOP:
@@ -184,13 +110,11 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
 
 	case SYSTEM_EVENT_AP_STACONNECTED:
 		bStationConnected++;
-		bLCDUpdate = 1;
 		printf("Accesspoint Station connected\n");
 		break;
 
 	case SYSTEM_EVENT_AP_STADISCONNECTED:
 		bStationConnected--;
-		bLCDUpdate = 1;
 		printf("Accesspoint Station disconnected\n");
 		break;
 
@@ -201,82 +125,13 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
 	default:
 		break;
 	}
-
-
-
-	return ESP_OK;
-#endif
-
-	switch(event->event_id) {
-        case SYSTEM_EVENT_WIFI_READY:
-        	ESP_LOGD(TAG, "EVENT_WIFI_READY");
-
-            break;
-
-        case SYSTEM_EVENT_AP_STACONNECTED:
-        	ESP_LOGD(TAG, "EVENT_AP_START");
-            break;
-
-		// When we have started being an access point
-		case SYSTEM_EVENT_AP_START:
-        	ESP_LOGD(TAG, "EVENT_START");
-           // xEventGroupSetBits(wifi_event_group, STARTED_BIT);
-
-			break;
-        case SYSTEM_EVENT_SCAN_DONE:
-        	ESP_LOGD(TAG, "EVENT_SCAN_DONE");
-			break;
-
-		case SYSTEM_EVENT_STA_CONNECTED:
-       		ESP_LOGD(TAG, "EVENT_STA_CONNECTED");
-         //   xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
-            break;
-
-		// If we fail to connect to an access point as a station, become an access point.
-		case SYSTEM_EVENT_STA_DISCONNECTED:
-          //  xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
-
-			ESP_LOGD(TAG, "EVENT_STA_DISCONNECTED");
-			// We think we tried to connect as a station and failed! ... become
-			// an access point.
-			break;
-
-		// If we connected as a station then we are done and we can stop being a
-		// web server.
-		case SYSTEM_EVENT_STA_GOT_IP:
-
-
-			ESP_LOGD(TAG, "********************************************");
-			ESP_LOGD(TAG, "* We are now connected to AP")
-			ESP_LOGD(TAG, "* - Our IP address is: " IPSTR, IP2STR(&event->event_info.got_ip.ip_info.ip));
-			ESP_LOGD(TAG, "********************************************");
-            {
-                //u32_t *my_ip=(u32_t *)&event->event_info.got_ip.ip_info.ip;
-				sprintf(my_ip, "IP : %d.%d.%d.%d", IP2STR(&event->event_info.got_ip.ip_info.ip));
-
-				ssd1306_draw_string(0, 55, 30, my_ip, 1, 0);
-				ssd1306_refresh(0, true);
-
-
-            }
-            //printf("Startinng send\n");
-            //xTaskCreate(&send_thread, "send_thread", 2048, NULL, 5, NULL);
-
-			break;
-
-		default: // Ignore the other event types
-			break;
-	} // Switch event
-
 	return ESP_OK;
 
 }
 
-
 //-------------------------------
 static void initialize_wifi(void)
 {
-#if (CODE_SIDE==SERVER)
 	tcpip_adapter_init();
 	tcpip_adapter_ip_info_t info = { 0, };
 	IP4_ADDR(&info.ip, 192, 168, 1, 3);
@@ -293,10 +148,9 @@ static void initialize_wifi(void)
 
 	wifi_config_t wifi_config;
 	memset(&wifi_config, 0, sizeof(wifi_config));
-	strcpy((char *)wifi_config.ap.ssid, "RYN AP");
+	strcpy((char *)wifi_config.ap.ssid, "HL_LED_AP");
 	wifi_config.ap.ssid_len = strlen((char *)wifi_config.ap.ssid);
 	wifi_config.ap.max_connection = 4;
-
 
 	wifi_config.ap.authmode = WIFI_AUTH_WPA2_PSK;
 	strcpy((char*)wifi_config.ap.password, "1234567890");
@@ -304,28 +158,6 @@ static void initialize_wifi(void)
 	ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
 	ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
 	ESP_ERROR_CHECK(esp_wifi_start());
-
-#endif
-
-	tcpip_adapter_init();
-	ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
-
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
-    ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
-    wifi_config_t wifi_config = {
-        .sta = {
-	           .ssid = "RYN AP",
-               .password = "1234567890",
-        },
-    };
-
-	ESP_LOGI("WIFI", "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
-    ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
-    ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
-    ESP_ERROR_CHECK( esp_wifi_start() );
-    ESP_ERROR_CHECK( esp_wifi_connect() );
-
 }
 
 
@@ -952,9 +784,7 @@ static void timer_isr(void* arg)
 int app_main(void)
 {
     
-	initialize_wifi();
 
-#if 0
 
 
     printf("\r\n\n");
@@ -1009,7 +839,6 @@ int app_main(void)
     static intr_handle_t s_timer_handle;
 
 
-
     timer_config_t config = {
 	.alarm_en = true,
 	.counter_en = false,
@@ -1058,29 +887,7 @@ int app_main(void)
 
 	printf("while(1)\r\n");
 
-#endif
-
-	if (ssd1306_init(0, 4, 5)) {
-		ESP_LOGI("OLED", "oled inited");
-		//ssd1306_draw_rectangle(0, 10, 30, 20, 20, 1);
-		ssd1306_select_font(0, 0);
-		ssd1306_draw_string(0, 0, 0, "Ryn DMX UDP PUSH TX", 1, 0);
-		ssd1306_select_font(0, 1);
-		ssd1306_draw_string(0, 0, 18, "2.4Ghz..", 1, 0);
-		ssd1306_draw_string(0, 55, 30, "Sending... ", 1, 0);
-		//ssd1306_draw_string(0, 55, 30, "Sending... ", 1, 0);
-		ssd1306_refresh(0, true);
-	} else {
-		ESP_LOGE("OLED", "oled init failed");
-	}
-
-
-
-
     while (1) {
-
-
-#if 0
     	static int led_duty = 0;
     	static int dir = 1;
 
@@ -1119,7 +926,6 @@ int app_main(void)
     		ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
 
         }
-#endif
 
 
 #if 0
@@ -1161,20 +967,6 @@ int app_main(void)
 		}
 
 #endif
-
-
-		if(bLCDUpdate){
-			bLCDUpdate = 0;
-
-			char szbuf[40];
-			sprintf(szbuf, "station count : %d", bStationConnected);
-
-			ssd1306_draw_string(0, 55, 30, szbuf, 1, 0);
-			ssd1306_refresh(0, true);
-
-
-		}
-
 		vTaskDelay(100 / portTICK_RATE_MS);
     }
 

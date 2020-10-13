@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Update Address - RynBright(tm)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <script type="text/javascript" src="jquery-1.11.3.min.js"></script>
+  <script src="jquery.flot.min.js"></script>
+  <script src="jquery.flot.time.js"></script>
+  <!-- <script type="text/javascript" src="main.js"></script> -->
+  <script type="text/javascript" >
+
+    function submitting()
+    {
+        document.getElementById("btn_submit").value = "Updating .... ";
+    }
+
+      function dec_new()
+      {
+          var addr = document.getElementById("new_address").value;
+          if (addr <= 1)
+              return;
+
+          addr--;
+          document.getElementById("new_address").value = addr;
+          document.getElementById("view_new_address").textContent = addr;
+      }
+
+      function inc_new()
+      {
+          var addr = document.getElementById("new_address").value;
+          if (addr >= 170)
+              return;
+
+          addr++;
+          document.getElementById("new_address").value = addr;
+          document.getElementById("view_new_address").textContent = addr;
+      }
+
+      function dec_old()
+      {
+          var addr = document.getElementById("old_address").value;
+          if (addr <= 1)
+              return;
+
+          addr--;
+          document.getElementById("old_address").value = addr;
+          document.getElementById("view_old_address").textContent = addr;
+      }
+
+      function inc_old()
+      {
+          var addr = document.getElementById("old_address").value;
+          if (addr >= 170)
+              return;
+
+          addr++;
+          document.getElementById("old_address").value = addr;
+          document.getElementById("view_old_address").textContent = addr;
+      }
+
+      $(document).on('input change', '#old_address', function() {
+          $('#view_old_address').html( $(this).val() );
+      });
+
+      $(document).on('input change', '#new_address', function() {
+          $('#view_new_address').html( $(this).val() );
+      });
+
+
+
+  </script>
+
+</head>
+<body>
+  <div class="content">
+    <!img src="logo.png" style="float:right; height: 50px; border-radius: 3px;">
+    <h3>TARGET ADDRESS UPDATE</h3>
+
+    <p>
+      특정 리시버의 어드레스를 업데이트 합니다.
+    </p>
+
+    TARGET ADDRESS : <span id="view_old_address" style="color:#FF0000;font-weight: bold"><!--#call old_address --></span> 을/를  <br />NEW ADDRESS : <span id="view_new_address" style="color:#FF0000;font-weight: bold"><!--#call new_address --></span>로 업데이트 합니다.
+
+    <br/><br/>
+    <form method="POST" action="/update_address">
+      <input type="hidden" value="target" name="ref" />
+      <b>Target Address</b>
+      <div style="text-align:center;">
+        <input type="range" id="old_address" name="old_address" min="1" max="170" value="<!--#call old_address -->"  /><br />
+        <input type="button" value="  <<  " onclick="dec_old()" class="button" />&nbsp;&nbsp;
+        <input type="button" value="  >>  " onclick="inc_old()" class="button" /><br /><br />
+      </div>
+
+      <b>New Address</b>
+      <div style="text-align:center;">
+        <input type="range" id="new_address" name="new_address" min="1" max="170" value="<!--#call new_address -->"  /><br />
+
+        <input type="button" value="  <<  " onclick="dec_new()" class="button" />&nbsp;&nbsp;
+        <input type="button" value="  >>  " onclick="inc_new()" class="button" /> <br /> <br />
+        <input type="submit" onclick="submitting()" id="btn_submit" value="ADDRESS UPDATE" class="submit_button"/>
+      </div>
+
+    </form>
+
+    <br />
+
+  <!--
+    <h1>Dashboard section</h1>
+    <label>CPU usage:</label> <span id="cpu_usage">&nbsp;</span>
+    <div id="graphs"></div>
+  -->
+
+  </div>
+  <div class="nav">
+    <a href="update.shtml" class="nav">UPDATE ADDRESS</a>  <br />
+    ▶▶<a href="update_target.shtml"  class="nav">UPDATE TARGET ADDRESS </a> <br />
+    <a href="config.shtml"  class="nav">SET CONFIG </a>
+  </div>
+
+</body>
+</html>
